@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    "target": "es2015",
+    "module": "commonjs",
+    "lib": [
+      "es2015",
+      "DOM"
+    ],
+    "strict": true,
+    "jsx": "preserve",
+    "jsxFactory": "h",
+    "importHelpers": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@App/*": [
+        "src/*"
+      ],
+      "@Test/*": [
+        "tests/*"
+      ]
+    },
+    "typeRoots": [
+      "./node_modules/@types/",
+      "./src/types"
+    ]
+  },
+  "exclude": [
+    "node_modules",
+    "build",
+    "assets"
+  ],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "./tests/*.test.ts"
+  ]
+}

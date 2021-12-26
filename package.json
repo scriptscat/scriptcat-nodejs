@@ -1,0 +1,39 @@
+{
+  "name": "scriptcat-nodejs",
+  "version": "0.1.0",
+  "description": "让nodejs也可以执行脚本猫脚本",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/scriptscat/scriptcat-nodejs.git"
+  },
+  "keywords": [
+    "userscript",
+    "scriptcat",
+    "cloudcat"
+  ],
+  "author": "CodFrm",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/scriptscat/scriptcat-nodejs/issues"
+  },
+  "homepage": "https://github.com/scriptscat/scriptcat-nodejs#readme",
+  "devDependencies": {
+    "@types/cron": "^1.7.3",
+    "@types/jest": "^27.0.3",
+    "@typescript-eslint/eslint-plugin": "^5.6.0",
+    "@typescript-eslint/parser": "^5.6.0",
+    "eslint": "^8.4.1",
+    "eslint-config-prettier": "^8.3.0",
+    "jest": "^27.4.5",
+    "ts-jest": "^27.1.2",
+    "typescript": "^4.5.3"
+  },
+  "dependencies": {
+    "axios": "^0.24.0",
+    "cron": "^1.8.2"
+  }
+}
