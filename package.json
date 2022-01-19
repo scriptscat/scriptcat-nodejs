@@ -16,7 +16,7 @@
     "cloudcat"
   ],
   "author": "CodFrm",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/scriptscat/scriptcat-nodejs/issues"
   },
