@@ -85,7 +85,7 @@ export class GM {
                 });
             }
         }).catch(e => {
-            detail.onerror && detail.onerror();
+            detail.onerror && detail.onerror('');
         });
 
     }

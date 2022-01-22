@@ -1,4 +1,4 @@
-import { ScriptCat } from '@App/scriptcat'
+import { ScriptCat } from '../src/scriptcat'
 
 describe('Run ScriptCat', () => {
     const run = new ScriptCat();

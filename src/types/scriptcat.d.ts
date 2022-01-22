@@ -66,7 +66,7 @@ declare function GM_setValue(name: string, value: any): void;
 
 declare function GM_getValue(name: string, defaultValue?: any): any;
 
-declare function GM_log(message: string, level?: GM_Types.LOGGER_LEVEL): any;
+declare function GM_log(message: string, level?: GM_Types.LoggerLevel): any;
 
 declare function GM_getResourceText(name: string): string | undefined;
 
@@ -77,7 +77,7 @@ declare function GM_registerMenuCommand(name: string, listener: () => void, acce
 declare function GM_unregisterMenuCommand(id: number): void;
 
 declare interface tab {
-    close()
+    close(): void
     onclose?: () => void
     closed?: boolean
     name?: string
@@ -111,6 +111,7 @@ declare function GM_getCookieStore(tabid: number, ondone: (storeId: number, erro
 declare function CAT_setProxy(rule: CAT_Types.ProxyRule[] | string): void;
 declare function CAT_clearProxy(): void;
 declare function CAT_click(x: number, y: number): void;
+declare function CAT_createFile(file: string | Blob, name: string, ondone?: (download: boolean, error?: any | undefined) => void): void;
 
 declare namespace CAT_Types {
     interface ProxyRule {
@@ -130,7 +131,7 @@ declare namespace GM_Types {
     // store为获取隐身窗口之类的cookie
     type CookieAction = 'list' | 'delete' | 'set' | 'store';
 
-    type LOGGER_LEVEL = 'debug' | 'info' | 'warn' | 'error';
+    type LoggerLevel = 'debug' | 'info' | 'warn' | 'error';
 
     interface CookieDetails {
         url?: string
@@ -143,6 +144,8 @@ declare namespace GM_Types {
         storeId?: string;
         httpOnly?: boolean
         expirationDate?: number
+        // store用
+        tabId?: number
     }
 
     interface Cookie {
@@ -176,7 +179,7 @@ declare namespace GM_Types {
         response?: any,
         responseText?: string,
         responseXML?: Document | null
-        responseType?: 'arraybuffer' | 'blob' | 'json'
+        responseType?: 'text' | 'arraybuffer' | 'blob' | 'json'
     }
 
     interface XHRProgress extends XHRResponse {
@@ -189,23 +192,25 @@ declare namespace GM_Types {
     }
 
     type Listener<OBJ> = (event: OBJ) => any;
+    type ContextType = any;
 
     interface XHRDetails {
         method?: 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS'
         url: string
         headers?: { [key: string]: string }
-        data?: string | FormData
+        data?: string | FormData | Blob
         cookie?: string
         binary?: boolean
         timeout?: number
-        context?: CONTEXT_TYPE
-        responseType?: 'arraybuffer' | 'blob' | 'json'
+        context?: ContextType
+        responseType?: 'text' | 'arraybuffer' | 'blob' | 'json'
         overrideMimeType?: string,
         anonymous?: boolean,
         fetch?: boolean,
         user?: string,
         password?: string,
         nocache?: boolean
+        maxRedirects?: number
 
         onload?: Listener<XHRResponse>,
         onloadstart?: Listener<XHRResponse>,
@@ -215,7 +220,7 @@ declare namespace GM_Types {
         ontimeout?: () => void,
         //TODO
         onabort?: () => void,
-        onerror?: () => void,
+        onerror?: (err: string) => void,
     }
 
     interface AbortHandle<RETURN_TYPE> {
@@ -223,20 +228,24 @@ declare namespace GM_Types {
     }
 
     interface DownloadError {
-        error: 'not_enabled' | 'not_whitelisted' | 'not_permitted' | 'not_supported' | 'not_succeeded',
+        error: 'not_enabled' | 'not_whitelisted' | 'not_permitted' | 'not_supported' | 'not_succeeded' | 'unknown',
         details?: string
     }
 
     interface DownloadDetails {
+        method?: 'GET' | 'POST'
         url: string,
         name: string,
-        headers?: { readonly [key: string]: string },
+        headers?: { [key: string]: string }
         saveAs?: boolean,
         timeout?: number,
+        cookie?: string,
+        anonymous?: boolean
+
         onerror?: Listener<DownloadError>,
-        ontimeout?: Listener<object>,
+        ontimeout?: () => void,
         onload?: Listener<object>,
-        onprogress?: Listener<XHRProgress<void>>
+        onprogress?: Listener<XHRProgress>
     }
 
     interface NotificationThis extends NotificationDetails {
