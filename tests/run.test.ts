@@ -1,5 +1,8 @@
 import { ScriptCat } from '../src/scriptcat'
 
+const cookie = <ScriptCat.ExportCookies[]>[];
+
+
 describe('Run ScriptCat', () => {
     const run = new ScriptCat();
     it('bilibili', async () => {
@@ -78,7 +81,9 @@ describe('Run ScriptCat', () => {
             });
         
         });
-`);
+`, {
+            cookie: cookie
+        });
         console.log(ret);
     });
 });

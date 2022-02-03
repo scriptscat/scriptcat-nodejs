@@ -1,8 +1,16 @@
 
-import axios, { Axios, AxiosRequestConfig, AxiosResponse, ResponseType } from 'axios';
-import http from 'http';
+import axios, { AxiosRequestConfig, ResponseType } from 'axios';
+import { CookieJar } from 'tough-cookie';
+import { Logger } from 'log4js';
+export class GMContext {
 
-export class GM {
+    cookiejar: CookieJar
+    logger: Logger;
+
+    constructor(logger: Logger, jar?: CookieJar) {
+        this.logger = logger;
+        this.cookiejar = jar || new CookieJar();
+    }
 
     protected static gmFuncMap: { [key: string]: any } = {};
 
@@ -10,16 +18,16 @@ export class GM {
         return (target: any,
             propertyName: string,
             descriptor: PropertyDescriptor) => {
-            GM.gmFuncMap[propertyName] = descriptor.value;
+            GMContext.gmFuncMap[propertyName] = descriptor.value;
         }
     }
 
-    public static GmFunc(name: string): any {
-        return GM.gmFuncMap[name];
+    public GmFunc(name: string): any {
+        return GMContext.gmFuncMap[name];
     }
 
-    @GM.Function()
-    public static GM_xmlhttpRequest(detail: GM_Types.XHRDetails) {
+    @GMContext.Function()
+    public GM_xmlhttpRequest(detail: GM_Types.XHRDetails) {
         let respType = <ResponseType>detail.responseType;
         if (detail.responseType == 'json') {
             respType = 'text';
@@ -27,12 +35,36 @@ export class GM {
         const config: AxiosRequestConfig = {
             url: detail.url,
             method: detail.method || 'GET',
-            headers: detail.headers,
+            headers: detail.headers || {},
             data: detail.data,
             timeout: detail.timeout,
-            responseType: respType
+            responseType: respType,
+            maxRedirects: detail.maxRedirects
         };
+        // 处理cookie
+        for (const key in config.headers) {
+            if (key.toLowerCase() == 'cookie') {
+                detail.cookie = config.headers[key];
+                delete config.headers[key];
+            }
+        }
+        if (!detail.anonymous) {
+            const cookieStr = this.cookiejar.getCookieStringSync(detail.url)
+            if (cookieStr) {
+                config.headers!['cookie'] = cookieStr;
+            }
+        }
+        if (detail.cookie) {
+            config.headers!['cookie'] = (config.headers!['cookie'] ? (config.headers!['cookie'] + ';') : '') + detail.cookie;
+        }
         void axios.request(config).then(resp => {
+            // 处理set-header
+            if (resp.headers['set-cookie']) {
+                this.logger.debug('jar set-cookie', detail.url, resp.headers['set-cookie']);
+                for (let i = 0; i < resp.headers['set-cookie'].length; i++) {
+                    this.cookiejar.setCookieSync(resp.headers['set-cookie'][i], detail.url);
+                }
+            }
             if (detail.onload) {
                 let headers = '';
                 for (const key in resp.headers) {
@@ -90,16 +122,18 @@ export class GM {
 
     }
 
-    @GM.Function()
-    public static GM_notification(detail: GM_Types.NotificationDetails) {
-        // eslint-disable-next-line prefer-rest-params
-        console.log(arguments);
+    @GMContext.Function()
+    public GM_notification(detail: GM_Types.NotificationDetails) {
+        this.logger.info('GM_notification', detail);
     }
 
-    @GM.Function()
-    public static GM_log() {
-        // eslint-disable-next-line prefer-rest-params
-        console.log(arguments);
+    @GMContext.Function()
+    public GM_log(level: GM_Types.LoggerLevel | string, log?: string) {
+        if (arguments.length == 1) {
+            this.logger.info('GM_log', 'info', log);
+        } else {
+            this.logger.info('GM_log', level, log);
+        }
     }
 }
 
