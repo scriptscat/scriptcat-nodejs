@@ -1,6 +1,6 @@
 import { ScriptCat } from '../src/scriptcat'
 
-const cookie = <ScriptCat.ExportCookies[]>[];
+const cookies = <ScriptCat.ExportCookies[]>[];
 
 
 describe('Run ScriptCat', () => {
@@ -82,7 +82,7 @@ describe('Run ScriptCat', () => {
         
         });
 `, {
-            cookie: cookie
+            cookies: cookies
         });
         console.log(ret);
     });

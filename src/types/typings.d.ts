@@ -1,7 +1,7 @@
 
 declare namespace ScriptCat {
   export interface RunOptions {
-    cookie?: ExportCookies[]
+    cookies?: ExportCookies[]
   }
 
   export interface ExportCookies extends GetAllDetails {

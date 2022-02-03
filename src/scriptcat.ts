@@ -81,8 +81,8 @@ export class ScriptCat {
 
     protected buildGmCtx(options?: ScriptCat.RunOptions): GMContext {
         let jar: CookieJar | undefined;
-        if (options && options.cookie) {
-            jar = this.cookieJar(options.cookie);
+        if (options && options.cookies) {
+            jar = this.cookieJar(options.cookies);
         }
         configure({
             appenders: { console: { type: 'console' } },
