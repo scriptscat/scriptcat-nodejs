@@ -1,6 +1,6 @@
 {
   "name": "scriptcat-nodejs",
-  "version": "0.1.7",
+  "version": "0.2.0",
   "description": "让nodejs也可以执行脚本猫脚本",
   "main": "dist/src/index.js",
   "scripts": {

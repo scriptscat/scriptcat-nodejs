@@ -189,7 +189,9 @@ export class ScriptCat {
 				try {
 					const resp = await axios(meta['require'][i]);
 					script = <string>resp.data + '\n' + script;
-				} catch (e) {}
+				} catch (e) {
+					this.logger.error('require', meta['require'][i], e);
+				}
 			}
 		}
 		const func = <ScriptCat.RunFunc>(
