@@ -3,15 +3,23 @@ import { GMContext } from './gm/gm';
 import { parseMetadata } from './utils';
 import { Cookie, CookieJar } from 'tough-cookie';
 import { configure, getLogger } from 'log4js';
+import axios from 'axios';
+
+configure({
+	appenders: { console: { type: 'console' } },
+	categories: { default: { appenders: ['console'], level: 'info' } },
+});
 
 export class ScriptCat {
-	public Run(script: string, options?: ScriptCat.RunOptions): Promise<string> {
+	logger = getLogger();
+
+	public async Run(script: string, options?: ScriptCat.RunOptions): Promise<string> {
 		const meta = parseMetadata(script);
 		if (!meta) {
 			throw new Error('parse metadata');
 		}
 		const gmContext = this.buildGmCtx(options);
-		const func = this.compile(script);
+		const func = await this.compile(meta, script);
 		const ctx = this.compileContext(gmContext, meta);
 		if (meta['background']) {
 			return this.runOnce(ctx, func);
@@ -36,13 +44,13 @@ export class ScriptCat {
 		});
 	}
 
-	public RunOnce(script: string, options?: ScriptCat.RunOptions): Promise<string> {
+	public async RunOnce(script: string, options?: ScriptCat.RunOptions): Promise<string> {
 		const meta = parseMetadata(script);
 		if (!meta) {
 			throw new Error('parse metadata');
 		}
 		const gmContext = this.buildGmCtx(options);
-		const func = this.compile(script);
+		const func = await this.compile(meta, script);
 		const ctx = this.compileContext(gmContext, meta);
 		return this.runOnce(ctx, func);
 	}
@@ -89,16 +97,13 @@ export class ScriptCat {
 		if (options && options.cookies) {
 			jar = this.cookieJar(options.cookies);
 		}
-		configure({
-			appenders: { console: { type: 'console' } },
-			categories: { default: { appenders: ['console'], level: 'info' } },
-		});
 		return new GMContext(getLogger('gm'), jar, options?.values);
 	}
 
 	protected runOnce(context: ScriptCat.RunContext, func: ScriptCat.RunFunc): Promise<string> {
 		return new Promise((resolve, reject) => {
-			const result = func.apply(context, [context]);
+			const sandbox = this.sandboxThis(context);
+			const result = func.apply(sandbox, [sandbox]);
 			if (!(result instanceof Promise)) {
 				return resolve(this.resultToString(result));
 			}
@@ -112,6 +117,64 @@ export class ScriptCat {
 		});
 	}
 
+	// 沙盒
+	protected sandboxThis(context: { [key: string]: any }): any {
+		let global: { [key: string]: any } = {};
+		return new Proxy(context, {
+			get(_, name) {
+				switch (name) {
+					case 'window':
+					case 'self':
+					case 'global':
+					case 'globalThis':
+						return global;
+				}
+				if (typeof name == 'string' && name !== 'undefined') {
+					if (context[name]) {
+						// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+						return context[name];
+					}
+					if (global[name] !== undefined) {
+						if (
+							typeof global[name] === 'function' &&
+							!(<() => void>global[name]).prototype
+						) {
+							return (<() => void>global[name]).bind(global);
+						}
+						// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+						return global[name];
+					}
+				}
+				return undefined;
+			},
+			has(_, name) {
+				switch (name) {
+					case 'window':
+					case 'self':
+					case 'global':
+					case 'globalThis':
+						return true;
+				}
+				if (typeof name === 'string') {
+					return context[name] || global[name] ? true : false;
+				}
+				return false;
+			},
+			set(_, name: string, val) {
+				switch (name) {
+					case 'window':
+					case 'self':
+					case 'global':
+					case 'globalThis':
+						global = val;
+						return true;
+				}
+				context[name] = val;
+				return true;
+			},
+		});
+	}
+
 	protected resultToString(result: any): string {
 		if (typeof result == 'string') {
 			return result;
@@ -119,12 +182,23 @@ export class ScriptCat {
 		return JSON.stringify(result);
 	}
 
-	protected compile(script: string): ScriptCat.RunFunc {
+	protected async compile(meta: ScriptCat.Metadata, script: string): Promise<ScriptCat.RunFunc> {
+		// 加载@require的js
+		if (meta['require']) {
+			for (let i = 0; i < meta['require'].length; i++) {
+				try {
+					const resp = await axios(meta['require'][i]);
+					script = <string>resp.data + '\n' + script;
+				} catch (e) {}
+			}
+		}
 		const func = <ScriptCat.RunFunc>(
-			new Function('context', 'with (context) return (()=>{\n' + script + '\n})(context)')
+			new Function(
+				'context',
+				'with (context) return ((context)=>{\n' + script + '\n})(context)'
+			)
 		);
-
-		return func;
+		return Promise.resolve(func);
 	}
 
 	// 编译上下文this

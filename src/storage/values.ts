@@ -1,5 +1,4 @@
-
-export interface ModelsValue {
+export interface ModelValue {
 	id: number;
 	scriptId: number;
 	storageName?: string;
@@ -8,11 +7,11 @@ export interface ModelsValue {
 	createtime: number;
 }
 
-export class ModelsValues implements IValues {
+export class ModelValues implements IValues {
 	values = new Map<string, { value: string }>();
 
-	constructor(models: ModelsValue[]) {
-		models.forEach((val) => {
+	constructor(values: ModelValue[]) {
+		values.forEach((val) => {
 			this.values.set(val.key, val);
 		});
 	}

@@ -1,7 +1,8 @@
 import axios, { AxiosRequestConfig, ResponseType } from 'axios';
 import { CookieJar } from 'tough-cookie';
 import { Logger } from 'log4js';
-import { ModelsValues } from '../storage/values';
+import { ModelValues } from '../storage/values';
+
 export class GMContext {
 	cookiejar: CookieJar;
 	logger: Logger;
@@ -10,7 +11,7 @@ export class GMContext {
 	constructor(logger: Logger, jar?: CookieJar, values?: IValues) {
 		this.logger = logger;
 		this.cookiejar = jar || new CookieJar();
-		this.values = values || new ModelsValues([]);
+		this.values = values || new ModelValues([]);
 	}
 
 	protected static gmFuncMap: { [key: string]: any } = {};
@@ -118,6 +119,7 @@ export class GMContext {
 				}
 			})
 			.catch((e) => {
+				this.logger.error('GM_xmlhttpRequest', detail.url, e);
 				detail.onerror && detail.onerror('');
 			});
 	}
